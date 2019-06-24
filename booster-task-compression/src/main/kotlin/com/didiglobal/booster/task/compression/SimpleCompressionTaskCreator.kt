@@ -13,7 +13,9 @@ import com.didiglobal.booster.gradle.project
 import com.didiglobal.booster.gradle.scope
 import com.didiglobal.booster.kotlinx.OS
 import com.didiglobal.booster.kotlinx.file
+import com.didiglobal.booster.kotlinx.md5
 import com.didiglobal.booster.util.search
+import org.bouncycastle.crypto.tls.HashAlgorithm.md5
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
@@ -46,6 +48,11 @@ class SimpleCompressionTaskCreator(private val cmdline: CompressionTool, private
     override fun createResourcesCompressionTask(variant: BaseVariant, results: CompressionResults): Task {
         val aapt2 = variant.project.aapt2Enabled
         val install = variant.createCompressionToolIfNotExists()
+
+        variant.mergeAssets.doLast {
+            variant.instrumentAssetManager()
+        }
+
         return variant.project.tasks.create("compress${variant.name.capitalize()}ResourcesWith${cmdline.name.substringBefore('.').capitalize()}", getCompressionTaskClass(aapt2).java) {
             it.outputs.upToDateWhen { false }
             it.cmdline = cmdline
@@ -70,6 +77,31 @@ class SimpleCompressionTaskCreator(private val cmdline: CompressionTool, private
     }
 
 }
+
+internal fun BaseVariant.makeDuplicatedAssetsMapping(): Map<String, String> {
+    val output = mergeAssets.outputDir
+    val assets = output.search().groupBy(File::md5).values.filter {
+        it.size > 1
+    }.map { duplicates ->
+        val head = duplicates.first()
+        duplicates.takeLast(duplicates.size - 1).map {
+            it to head
+        }.toMap(mutableMapOf())
+    }.reduce { acc, map ->
+        acc.putAll(map)
+        acc
+    }
+
+    assets.keys.forEach {
+        it.delete()
+    }
+
+    return assets.map {
+        it.key.toRelativeString(output) to it.value.toRelativeString(output)
+    }.toMap()
+}
+
+
 
 open class InstallCompressor : DefaultTask() {
 

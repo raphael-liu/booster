@@ -73,7 +73,7 @@ class ActivityThreadTransformer : ClassTransformer {
     }
 }
 
-private val ClassNode.defaultClinit: MethodNode
+internal val ClassNode.defaultClinit: MethodNode
     get() = MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null).apply {
         maxStack = 1
         instructions.insert(InsnNode(RETURN))

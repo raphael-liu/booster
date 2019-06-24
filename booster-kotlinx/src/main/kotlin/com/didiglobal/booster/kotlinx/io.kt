@@ -6,6 +6,7 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.Reader
+import java.security.MessageDigest
 
 fun File.file(vararg path: String) = File(this, path.joinToString(File.separator))
 
@@ -57,3 +58,5 @@ fun ByteArray.redirect(file: File): Long = this.inputStream().use { it.redirect(
  * @author johnsonlee
  */
 fun ByteArray.redirect(output: OutputStream): Long = this.inputStream().copyTo(output)
+
+fun File.md5(): String = ""
